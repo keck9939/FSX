@@ -27,6 +27,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace FSX
@@ -46,13 +47,24 @@ namespace FSX
 
         public HostFS(String source, String format)
         {
-            if (source.EndsWith(@"\")) source = source.Substring(0, source.Length - 1);
-            mSource = source;
-            mType = String.Concat("Host/", format);
-            mCWD = new DirectoryInfo(String.Concat(source, "."));
-            String dir = mCWD.FullName.Substring(2);
-            if (!dir.EndsWith(@"\")) dir = String.Concat(dir, @"\");
-            mDir = dir;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (source.EndsWith(@"\")) source = source.Substring(0, source.Length - 1);
+                mSource = source;
+                mType = String.Concat("Host/", format);
+                mCWD = new DirectoryInfo(String.Concat(source, "."));
+                String dir = mCWD.FullName.Substring(2);
+                if (!dir.EndsWith(@"\")) dir = String.Concat(dir, @"\");
+                mDir = dir;
+            }
+            else
+            {
+                mSource = source;
+                mType = String.Concat("Host/", format);
+                mCWD = new DirectoryInfo(String.Concat(source, "."));
+                String dir = mCWD.FullName;
+                mDir = dir;
+            }
         }
 
         public override String Source

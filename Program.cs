@@ -43,6 +43,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace FSX
@@ -79,6 +80,11 @@ namespace FSX
             // parse command-line arguments
             Boolean run = true;
             Int32 ap = 0;
+
+#if DEBUG
+            Console.WriteLine("Enter to continue"); // Pause here to allow debug attach when debugging on WSL from Windows
+            Console.ReadLine();
+#endif
             while (ap < args.Length)
             {
                 String arg = args[ap++];
@@ -154,12 +160,24 @@ namespace FSX
 
         static void MountHostVolumes()
         {
-            foreach (DriveInfo drive in DriveInfo.GetDrives())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                if (!drive.IsReady) continue;
-                String id = drive.Name;
-                if (id.EndsWith(@"\")) id = id.Substring(0, id.Length - 1);
-                if (id.EndsWith(@":")) id = id.Substring(0, id.Length - 1);
+                foreach (DriveInfo drive in DriveInfo.GetDrives())
+                {
+                    if (!drive.IsReady) continue;
+                    String id = drive.Name;
+                    if (id.EndsWith(@"\")) id = id.Substring(0, id.Length - 1);
+                    if (id.EndsWith(@":")) id = id.Substring(0, id.Length - 1);
+                    VolInfo vol = new VolInfo(id, new HostFS(drive.Name, drive.DriveFormat));
+                    VolMap.Add(vol.ID, vol);
+                    if (CurVol.ID == null) CurVol = vol;
+                    Console.Error.WriteLine("{0}: = {1} [{2}]", id, drive.Name, vol.FS.Type);
+                }
+            }
+            else
+            {
+                string id = "C";
+                DriveInfo drive = new DriveInfo("/");
                 VolInfo vol = new VolInfo(id, new HostFS(drive.Name, drive.DriveFormat));
                 VolMap.Add(vol.ID, vol);
                 if (CurVol.ID == null) CurVol = vol;
